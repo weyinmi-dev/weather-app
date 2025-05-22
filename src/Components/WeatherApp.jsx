@@ -2,12 +2,14 @@ import sunny from "../assets/images/sunny.png";
 import rainy from "../assets/images/rainy.png";
 import cloudy from "../assets/images/cloudy.png";
 import snowy from "../assets/images/snowy.png";
+import loadingGif from "../assets/images/loadingGif.gif";
 import { useEffect, useState } from "react";
 
 const WeatherApp = () => {
   const [data, setData] = useState([]);
   const api_key = import.meta.env.VITE_API_KEY;
   const [location, setLocation] = useState("");
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const fetchWeatherData = async () => {
@@ -16,6 +18,7 @@ const WeatherApp = () => {
       const res = await fetch(url);
       const defaultData = await res.json();
       setData(defaultData);
+      setLoading(false);
     };
 
     fetchWeatherData();
@@ -45,12 +48,18 @@ const WeatherApp = () => {
     : null;
 
   const search = async () => {
-    const url = `https://api.openweathermap.org/data/2.5/weather?q=${location}&appid=${api_key}`;
-    const res = await fetch(url);
-    const searchData = await res.json();
-    console.log(searchData);
-    setData(searchData);
-    setLocation("");
+    if (location.trim() !== "") {
+      const url = `https://api.openweathermap.org/data/2.5/weather?q=${location}&appid=${api_key}`;
+      const res = await fetch(url);
+      const searchData = await res.json();
+      if (searchData.cod === "200") {
+        setData({ notFound: true });
+      } else {
+        setData(searchData);
+        setLocation("");
+      }
+      setLoading(false);
+    }
   };
 
   const backgroundImages = {
@@ -126,32 +135,42 @@ const WeatherApp = () => {
             <i className="fa-solid fa-magnifying-glass" onClick={search}></i>
           </div>
         </div>
-        <div className="weather">
-          <img src={weatherImage} alt="sunny" />
-          <div className="weather-type">
-            {data.weather ? data.weather[0].main : null}
-          </div>
-          <div className="temp">
-            {data.main ? `${Math.floor(data.main.temp / 10)}°C` : null}
-          </div>
-        </div>
-        <div className="weather-date">
-          <p>{formattedDate}</p>
-        </div>
-        <div className="weather-data">
-          <div className="humidity">
-            <div className="data-name">Humidity</div>
-            <i className="fa-solid fa-droplet"></i>
-            <div className="data">{data.main ? data.main.humidity : null}%</div>
-          </div>
-          <div className="wind">
-            <div className="data-name">Wind</div>
-            <i className="fa-solid fa-wind"></i>
-            <div className="data">
-              {data.wind ? data.wind.speed : null} km/h
+        {loading ? (
+          <img className="loader" src={loadingGif} alt="loading" />
+        ) : data.notFound ? (
+          <div className="not-found">Not Found 😒</div>
+        ) : (
+          <>
+            <div className="weather">
+              <img src={weatherImage} alt="sunny" />
+              <div className="weather-type">
+                {data.weather ? data.weather[0].main : null}
+              </div>
+              <div className="temp">
+                {data.main ? `${Math.floor(data.main.temp / 10)}°C` : null}
+              </div>
             </div>
-          </div>
-        </div>
+            <div className="weather-date">
+              <p>{formattedDate}</p>
+            </div>
+            <div className="weather-data">
+              <div className="humidity">
+                <div className="data-name">Humidity</div>
+                <i className="fa-solid fa-droplet"></i>
+                <div className="data">
+                  {data.main ? data.main.humidity : null}%
+                </div>
+              </div>
+              <div className="wind">
+                <div className="data-name">Wind</div>
+                <i className="fa-solid fa-wind"></i>
+                <div className="data">
+                  {data.wind ? data.wind.speed : null} km/h
+                </div>
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
